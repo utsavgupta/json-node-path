@@ -168,23 +168,13 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
-              {selectedNode?.label || selectedNode?.name || "Node Details"}
+              {selectedNode?.name || selectedNode?.id || "Node Details"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            {selectedNode && Object.entries(selectedNode).map(([key, value]) => {
-              if (key === "label") return null;
-              return (
-                <div key={key} className="border-b border-border pb-3">
-                  <p className="text-sm font-semibold text-muted-foreground uppercase mb-1">
-                    {key}
-                  </p>
-                  <p className="text-foreground">
-                    {typeof value === "object" ? JSON.stringify(value, null, 2) : String(value)}
-                  </p>
-                </div>
-              );
-            })}
+          <div className="mt-4">
+            <p className="text-foreground whitespace-pre-wrap">
+              {selectedNode?.description || "No description available"}
+            </p>
           </div>
         </DialogContent>
       </Dialog>
