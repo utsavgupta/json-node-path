@@ -8,6 +8,7 @@ import ReactFlow, {
   useEdgesState,
   BackgroundVariant,
   MarkerType,
+  Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,15 +29,76 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
   useEffect(() => {
     if (!data.nodes || !data.edges) return;
 
-    // Transform data to ReactFlow format
+    // Calculate node levels for left-to-right layout
+    const nodeMap = new Map(data.nodes.map((node, idx) => [node.id || String(idx), node]));
+    const levels = new Map<string, number>();
+    const inDegree = new Map<string, number>();
+    
+    // Initialize in-degree
+    data.nodes.forEach((node, idx) => {
+      const id = node.id || String(idx);
+      inDegree.set(id, 0);
+      levels.set(id, 0);
+    });
+    
+    // Calculate in-degree
+    data.edges.forEach(edge => {
+      const target = edge.target || edge.to;
+      inDegree.set(target, (inDegree.get(target) || 0) + 1);
+    });
+    
+    // BFS to assign levels (depth from sources)
+    const queue: string[] = [];
+    inDegree.forEach((degree, id) => {
+      if (degree === 0) queue.push(id);
+    });
+    
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const currentLevel = levels.get(current) || 0;
+      
+      data.edges.forEach(edge => {
+        const source = edge.source || edge.from;
+        const target = edge.target || edge.to;
+        
+        if (source === current) {
+          const newLevel = currentLevel + 1;
+          levels.set(target, Math.max(levels.get(target) || 0, newLevel));
+          
+          const degree = inDegree.get(target)! - 1;
+          inDegree.set(target, degree);
+          
+          if (degree === 0) queue.push(target);
+        }
+      });
+    }
+    
+    // Group nodes by level
+    const nodesByLevel = new Map<number, string[]>();
+    levels.forEach((level, id) => {
+      if (!nodesByLevel.has(level)) nodesByLevel.set(level, []);
+      nodesByLevel.get(level)!.push(id);
+    });
+
+    // Transform data to ReactFlow format with left-to-right positioning
     const flowNodes: Node[] = data.nodes.map((node, index) => {
+      const nodeId = node.id || String(index);
+      const level = levels.get(nodeId) || 0;
+      const nodesAtLevel = nodesByLevel.get(level) || [];
+      const indexInLevel = nodesAtLevel.indexOf(nodeId);
+      
       const nodeType = node.type?.toLowerCase();
       const Icon = nodeType === "library" ? Library : Database;
       const label = node.label || node.name || node.id;
       
       return {
-        id: node.id || String(index),
-        position: node.position || { x: Math.random() * 500, y: Math.random() * 500 },
+        id: nodeId,
+        position: node.position || { 
+          x: level * 300, 
+          y: indexInLevel * 150 
+        },
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
         data: { 
           label: (
             <div className="flex items-center gap-2">
