@@ -11,6 +11,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Database, Library } from "lucide-react";
 
 interface DataLineageGraphProps {
   data: {
@@ -28,31 +29,41 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
     if (!data.nodes || !data.edges) return;
 
     // Transform data to ReactFlow format
-    const flowNodes: Node[] = data.nodes.map((node, index) => ({
-      id: node.id || String(index),
-      position: node.position || { x: Math.random() * 500, y: Math.random() * 500 },
-      data: { 
-        label: node.label || node.name || node.id,
-        ...node 
-      },
-      style: {
-        background: "hsl(var(--card))",
-        border: "2px solid hsl(var(--primary))",
-        borderRadius: "12px",
-        padding: "16px",
-        fontSize: "14px",
-        fontWeight: "500",
-        color: "hsl(var(--card-foreground))",
-        boxShadow: "var(--shadow-card)",
-        minWidth: "150px",
-      },
-    }));
+    const flowNodes: Node[] = data.nodes.map((node, index) => {
+      const nodeType = node.type?.toLowerCase();
+      const Icon = nodeType === "library" ? Library : Database;
+      const label = node.label || node.name || node.id;
+      
+      return {
+        id: node.id || String(index),
+        position: node.position || { x: Math.random() * 500, y: Math.random() * 500 },
+        data: { 
+          label: (
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-primary" />
+              <span>{label}</span>
+            </div>
+          ),
+          ...node 
+        },
+        style: {
+          background: "hsl(var(--card))",
+          border: "2px solid hsl(var(--primary))",
+          borderRadius: "12px",
+          padding: "16px",
+          fontSize: "14px",
+          fontWeight: "500",
+          color: "hsl(var(--card-foreground))",
+          boxShadow: "var(--shadow-card)",
+          minWidth: "150px",
+        },
+      };
+    });
 
     const flowEdges: Edge[] = data.edges.map((edge, index) => ({
       id: edge.id || `edge-${index}`,
       source: edge.source || edge.from,
       target: edge.target || edge.to,
-      label: edge.label,
       animated: true,
       style: { stroke: "hsl(var(--primary))", strokeWidth: 2 },
       markerEnd: {
