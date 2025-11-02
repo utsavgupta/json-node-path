@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -11,7 +11,6 @@ import ReactFlow, {
   Position,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Database, Library } from "lucide-react";
 
 interface DataLineageGraphProps {
@@ -24,7 +23,6 @@ interface DataLineageGraphProps {
 export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
 
   useEffect(() => {
     if (!data.nodes || !data.edges) return;
@@ -89,7 +87,8 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
       
       const nodeType = node.type?.toLowerCase();
       const Icon = nodeType === "library" ? Library : Database;
-      const label = node.label || node.name || node.id;
+      const label = node.label || node.id;
+      const location = node.location || "";
       
       return {
         id: nodeId,
@@ -102,8 +101,13 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
         data: { 
           label: (
             <div className="flex items-center gap-2">
-              <Icon className="w-4 h-4 text-primary" />
-              <span>{label}</span>
+              <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-medium">{label}</span>
+                {location && (
+                  <span className="text-xs text-muted-foreground">{location}</span>
+                )}
+              </div>
             </div>
           ),
           ...node 
@@ -138,46 +142,24 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
     setEdges(flowEdges);
   }, [data, setNodes, setEdges]);
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNode(node.data);
-  }, []);
-
   return (
-    <>
-      <div className="w-full h-[calc(100vh-12rem)] bg-card rounded-lg shadow-[var(--shadow-card)] overflow-hidden border border-border">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
-          fitView
-          attributionPosition="bottom-left"
-        >
-          <Controls className="bg-card border-border" />
-          <Background 
-            variant={BackgroundVariant.Dots} 
-            gap={16} 
-            size={1}
-            color="hsl(var(--muted-foreground) / 0.2)"
-          />
-        </ReactFlow>
-      </div>
-
-      <Dialog open={!!selectedNode} onOpenChange={() => setSelectedNode(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              {selectedNode?.name || selectedNode?.id || "Node Details"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <p className="text-foreground whitespace-pre-wrap">
-              {selectedNode?.description || "No description available"}
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="w-full h-[calc(100vh-12rem)] bg-card rounded-lg shadow-[var(--shadow-card)] overflow-hidden border border-border">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        fitView
+        attributionPosition="bottom-left"
+      >
+        <Controls className="bg-card border-border" />
+        <Background 
+          variant={BackgroundVariant.Dots} 
+          gap={16} 
+          size={1}
+          color="hsl(var(--muted-foreground) / 0.2)"
+        />
+      </ReactFlow>
+    </div>
   );
 };

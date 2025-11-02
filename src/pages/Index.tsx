@@ -32,17 +32,16 @@ const Index = () => {
   "nodes": [
     {
       "id": "dataset1",
-      "label": "Dataset Name",
-      "description": "Dataset description",
-      "type": "source",
-      ...additional properties
+      "location": "abc.txt",
+      "label": "ds_1",
+      "type": "dataset",
+      "summary": "This is a summary of the transformation"
     }
   ],
   "edges": [
     {
       "source": "dataset1",
-      "target": "dataset2",
-      "label": "transforms to"
+      "target": "dataset2"
     }
   ]
 }`}
@@ -57,7 +56,7 @@ const Index = () => {
                     Interactive Lineage Graph
                   </h2>
                   <p className="text-muted-foreground">
-                    Click on nodes to view detailed information
+                    Explore your data relationships
                   </p>
                 </div>
                 <button
