@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -12,6 +12,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Database, Library } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DataLineageGraphProps {
   data: {
@@ -23,6 +24,7 @@ interface DataLineageGraphProps {
 export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedNode, setSelectedNode] = useState<any>(null);
 
   useEffect(() => {
     if (!data.nodes || !data.edges) return;
@@ -142,24 +144,46 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
     setEdges(flowEdges);
   }, [data, setNodes, setEdges]);
 
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+    setSelectedNode(node.data);
+  }, []);
+
   return (
-    <div className="w-full h-[calc(100vh-12rem)] bg-card rounded-lg shadow-[var(--shadow-card)] overflow-hidden border border-border">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-        attributionPosition="bottom-left"
-      >
-        <Controls className="bg-card border-border" />
-        <Background 
-          variant={BackgroundVariant.Dots} 
-          gap={16} 
-          size={1}
-          color="hsl(var(--muted-foreground) / 0.2)"
-        />
-      </ReactFlow>
-    </div>
+    <>
+      <div className="w-full h-[calc(100vh-12rem)] bg-card rounded-lg shadow-[var(--shadow-card)] overflow-hidden border border-border">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
+          fitView
+          attributionPosition="bottom-left"
+        >
+          <Controls className="bg-card border-border" />
+          <Background 
+            variant={BackgroundVariant.Dots} 
+            gap={16} 
+            size={1}
+            color="hsl(var(--muted-foreground) / 0.2)"
+          />
+        </ReactFlow>
+      </div>
+
+      <Dialog open={!!selectedNode} onOpenChange={() => setSelectedNode(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {selectedNode?.label || selectedNode?.id || "Node Summary"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <p className="text-foreground whitespace-pre-wrap">
+              {selectedNode?.summary || "No summary available"}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
