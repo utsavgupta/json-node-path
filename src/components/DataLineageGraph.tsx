@@ -9,6 +9,7 @@ import ReactFlow, {
   BackgroundVariant,
   MarkerType,
   Position,
+  useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { Database, Library } from "lucide-react";
@@ -21,10 +22,11 @@ interface DataLineageGraphProps {
   };
 }
 
-export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
+const DataLineageGraphInner = ({ data }: DataLineageGraphProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<any>(null);
+  const { fitView } = useReactFlow();
 
   useEffect(() => {
     if (!data.nodes || !data.edges) return;
@@ -80,12 +82,18 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
       nodesByLevel.get(level)!.push(id);
     });
 
-    // Transform data to ReactFlow format with left-to-right positioning
+    // Transform data to ReactFlow format with better spacing
     const flowNodes: Node[] = data.nodes.map((node, index) => {
       const nodeId = node.id || String(index);
       const level = levels.get(nodeId) || 0;
       const nodesAtLevel = nodesByLevel.get(level) || [];
       const indexInLevel = nodesAtLevel.indexOf(nodeId);
+      const totalAtLevel = nodesAtLevel.length;
+      
+      // Calculate vertical spacing to center nodes at each level
+      const verticalSpacing = 200;
+      const levelHeight = (totalAtLevel - 1) * verticalSpacing;
+      const yOffset = indexInLevel * verticalSpacing - (levelHeight / 2);
       
       const nodeType = node.type?.toLowerCase();
       const Icon = nodeType === "library" ? Library : Database;
@@ -95,8 +103,8 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
       return {
         id: nodeId,
         position: node.position || { 
-          x: level * 300, 
-          y: indexInLevel * 150 
+          x: level * 400, 
+          y: yOffset 
         },
         sourcePosition: Position.Right,
         targetPosition: Position.Left,
@@ -142,7 +150,22 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
 
     setNodes(flowNodes);
     setEdges(flowEdges);
-  }, [data, setNodes, setEdges]);
+    
+    // Focus on the final node if it exists
+    setTimeout(() => {
+      const finalNode = flowNodes.find(node => node.data.final === true);
+      if (finalNode) {
+        fitView({ 
+          nodes: [{ id: finalNode.id }], 
+          duration: 800,
+          padding: 0.3,
+          maxZoom: 1.5
+        });
+      } else {
+        fitView({ duration: 400 });
+      }
+    }, 100);
+  }, [data, setNodes, setEdges, fitView]);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     setSelectedNode(node.data);
@@ -187,3 +210,9 @@ export const DataLineageGraph = ({ data }: DataLineageGraphProps) => {
     </>
   );
 };
+
+export const DataLineageGraph = (props: DataLineageGraphProps) => (
+  <ReactFlow>
+    <DataLineageGraphInner {...props} />
+  </ReactFlow>
+);
