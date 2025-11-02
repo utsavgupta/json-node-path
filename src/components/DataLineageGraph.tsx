@@ -22,10 +22,13 @@ interface DataLineageGraphProps {
   };
 }
 
-const DataLineageGraphInner = ({ data }: DataLineageGraphProps) => {
+interface DataLineageGraphInnerProps extends DataLineageGraphProps {
+  onNodeSelect: (node: any) => void;
+}
+
+const DataLineageGraphInner = ({ data, onNodeSelect }: DataLineageGraphInnerProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
   const { fitView } = useReactFlow();
 
   useEffect(() => {
@@ -168,31 +171,40 @@ const DataLineageGraphInner = ({ data }: DataLineageGraphProps) => {
   }, [data, setNodes, setEdges, fitView]);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    setSelectedNode(node.data);
-  }, []);
+    onNodeSelect(node.data);
+  }, [onNodeSelect]);
+
+  return (
+    <div className="w-full h-[calc(100vh-12rem)] bg-card rounded-lg shadow-[var(--shadow-card)] overflow-hidden border border-border">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={onNodeClick}
+        fitView
+        attributionPosition="bottom-left"
+      >
+        <Controls className="bg-card border-border" />
+        <Background 
+          variant={BackgroundVariant.Dots} 
+          gap={16} 
+          size={1}
+          color="hsl(var(--muted-foreground) / 0.2)"
+        />
+      </ReactFlow>
+    </div>
+  );
+};
+
+export const DataLineageGraph = (props: DataLineageGraphProps) => {
+  const [selectedNode, setSelectedNode] = useState<any>(null);
 
   return (
     <>
-      <div className="w-full h-[calc(100vh-12rem)] bg-card rounded-lg shadow-[var(--shadow-card)] overflow-hidden border border-border">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
-          fitView
-          attributionPosition="bottom-left"
-        >
-          <Controls className="bg-card border-border" />
-          <Background 
-            variant={BackgroundVariant.Dots} 
-            gap={16} 
-            size={1}
-            color="hsl(var(--muted-foreground) / 0.2)"
-          />
-        </ReactFlow>
-      </div>
-
+      <ReactFlow>
+        <DataLineageGraphInner {...props} onNodeSelect={setSelectedNode} />
+      </ReactFlow>
       <Dialog open={!!selectedNode} onOpenChange={() => setSelectedNode(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -210,9 +222,3 @@ const DataLineageGraphInner = ({ data }: DataLineageGraphProps) => {
     </>
   );
 };
-
-export const DataLineageGraph = (props: DataLineageGraphProps) => (
-  <ReactFlow>
-    <DataLineageGraphInner {...props} />
-  </ReactFlow>
-);
